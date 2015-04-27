@@ -8,12 +8,12 @@ ReplicaOK=""
 
 
 function VerifyStatus {
-	VerifyOK=$(ssh -i $SSHKeyFile -p 122 admin@$ReplicaIP "ghe-repl-status -vv" | grep "OK:" | wc -l)
-	if ( $VerifyOK = "4"){
+	VerifyOK=$(ssh -i $SSHKeyFile -p 122 admin@$ReplicaIP "ghe-repl-status" | grep "OK:" | wc -l)
+	if [ $VerifyOK = "3" ]; then
 		ReplicaOK="1"
-	}else{
+	else
 		ReplicaOK="0"
-	}
+	fi
 }
 
 #wait 30 seconds
@@ -23,7 +23,7 @@ sleep 3
 VerifyStatus
 
 #change replica node to be primary
-
-ssh -i $SSHKeyFile -p 122 admin@$ReplicaIP "ghe-repl-promote"
-
+if [ $ReplicaOK = "1" ]; then
+	ssh -i $SSHKeyFile -p 122 admin@$ReplicaIP "ghe-repl-promote"
+fi
 

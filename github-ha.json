@@ -1,0 +1,319 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "GitHub Enterprise High Availibility: with a instance as replica (@California us-west-1)",
+
+  "Parameters" : {
+    "Instance" : {
+      "Description" : "Type of EC2 instance to launch",
+      "Type" : "String",
+      "Default" : "r3.large",
+      "AllowedValues": [
+        "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
+        "m3.xlarge", "m3.2xlarge",
+        "c3.2xlarge", "c3.4xlarge", "c3.8xlarge"
+      ]
+    },
+    "Data" : {
+      "Description" : "Size of attached EBS volumes (in GB)",
+      "Type" : "Number",
+      "Default" : 10,
+      "MinValue" : 10,
+      "MaxValue" : 1000
+    },
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type" : "AWS::EC2::KeyPair::KeyName"
+    },
+	"VPC" : {
+        "Description" : "The VPC ID for Github Opswork",
+        "Type"        : "AWS::EC2::VPC::Id"
+    },
+    "PublicSubnet1" : {
+        "Description" : "The Public subnet ID (1st availability zone)",
+        "Type"        : "AWS::EC2::Subnet::Id"
+    },
+    "PublicSubnet2" : {
+        "Description" : "The Public subnet ID (2nd availability zone)",
+        "Type"        : "AWS::EC2::Subnet::Id"
+    }
+  },
+
+  "Conditions" : {
+    "IsEBSOptimized" : { "Fn::Equals" : [ { "Fn::FindInMap" : [ "InstanceConfig", { "Ref" : "Instance" }, "EbsOptimized" ]}, "true" ] },
+    "HasKeyName" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "KeyName" }, ""] }] }
+  },
+
+  "Mappings" : {
+    "AWSRegion2Ami" : {
+      "ap-northeast-1" : { "AMI" : "ami-00d0c801" },
+      "ap-southeast-1" : { "AMI" : "ami-3e29036c" },
+      "ap-southeast-2" : { "AMI" : "ami-63a4d059" },
+      "eu-central-1" : { "AMI" : "ami-bce6d5a1" },
+      "eu-west-1" : { "AMI" : "ami-f7f07f80" },
+      "sa-east-1" : { "AMI" : "ami-9143ff8c" },
+      "us-east-1" : { "AMI" : "ami-ec501184" },
+      "us-west-1" : { "AMI" : "ami-42100807" },
+      "us-west-2" : { "AMI" : "ami-dba0f8eb" }
+    },
+    "InstanceConfig" : {
+      "r3.large" : { "EbsOptimized" : "false" },
+      "r3.xlarge": { "EbsOptimized" : "true" },
+      "r3.2xlarge" : { "EbsOptimized" : "true" },
+      "r3.4xlarge" : { "EbsOptimized" : "true" },
+      "r3.8xlarge" : { "EbsOptimized" : "false" },
+      "m3.xlarge" : { "EbsOptimized" : "true" },
+      "m3.2xlarge" : { "EbsOptimized" : "true" },
+      "c3.2xlarge" : { "EbsOptimized" : "true" },
+      "c3.4xlarge" : { "EbsOptimized" : "true" },
+      "c3.8xlarge" : { "EbsOptimized" : "false" }
+    }
+  },
+
+  "Resources" : {
+
+    "GHPrimary" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+		"AvailabilityZone" : { "Fn::Select" : ["0", {"Fn::GetAZs" : ""}] },
+		"NetworkInterfaces" : [
+			{ 
+				"DeviceIndex" : "0" ,
+			 	"AssociatePublicIpAddress" : "True",
+			 	"GroupSet" : [{ "Ref" : "GHInstanceSecurityGroup" }],
+				"SubnetId" : { "Ref" : "PublicSubnet1" }
+			}
+		],
+        "KeyName" : { "Fn::If" : [ "HasKeyName",
+                                   { "Ref" : "KeyName" },
+                                   { "Ref" : "AWS::NoValue" }
+                                 ]},
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegion2Ami", { "Ref" : "AWS::Region" }, "AMI" ] },
+        "InstanceType" : { "Ref" : "Instance" },
+        "EbsOptimized": { "Fn::If" : [ "IsEBSOptimized", true, false ] },
+        "BlockDeviceMappings": [{
+          "DeviceName" : "/dev/xvdf",
+          "Ebs": {
+            "VolumeType": "gp2",
+            "VolumeSize" : { "Ref" : "Data" },
+            "Encrypted": false,
+            "DeleteOnTermination": false
+          }
+        }],
+		"Tags" : [
+            { "Key" : "Name",
+              "Value" : "Github-HA-Primary" }
+        ]
+      },
+	  "DependsOn": "GHInstanceSecurityGroup"
+    },
+	
+    "GHReplica" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+		"AvailabilityZone" : { "Fn::Select" : ["1", {"Fn::GetAZs" : ""}] },
+		"NetworkInterfaces" : [
+            {
+                "DeviceIndex" : "0" ,
+                "AssociatePublicIpAddress" : "True",
+                "GroupSet" : [{ "Ref" : "GHInstanceSecurityGroup" }],
+                "SubnetId" : { "Ref" : "PublicSubnet2" }
+            }
+        ],
+        "KeyName" : { "Fn::If" : [ "HasKeyName",
+                                   { "Ref" : "KeyName" },
+                                   { "Ref" : "AWS::NoValue" }
+                                 ]},
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegion2Ami", { "Ref" : "AWS::Region" }, "AMI" ] },
+        "InstanceType" : { "Ref" : "Instance" },
+        "EbsOptimized": { "Fn::If" : [ "IsEBSOptimized", true, false ] },
+        "BlockDeviceMappings": [{
+          "DeviceName" : "/dev/xvdf",
+          "Ebs": {
+            "VolumeType": "gp2",
+            "VolumeSize" : { "Ref" : "Data" },
+            "Encrypted": false,
+            "DeleteOnTermination": false
+          }
+        }],
+		"Tags" : [
+			{ "Key" : "Name",
+			  "Value" : "Github-HA-Replica" }
+		]
+      },
+	  "DependsOn": "GHInstanceSecurityGroup"
+    },
+
+	"PrimaryEIP" : {
+		"Type" : "AWS::EC2::EIP",
+		"Properties" : {
+			"InstanceId" : { "Ref" : "GHPrimary" }
+		}
+	},
+	"ReplicaEIP" : {
+		"Type" : "AWS::EC2::EIP",
+		"Properties" : {
+			"InstanceId" : { "Ref" : "GHReplica" }
+		}
+	},
+
+	"ELBasDNS" : {
+		"Type":	"AWS::ElasticLoadBalancing::LoadBalancer",
+		"Properties":	{
+			"Subnets":	[
+				{
+						"Ref":	"PublicSubnet1"
+				},
+				{
+						"Ref":	"PublicSubnet2"
+				}
+			],
+			"HealthCheck":	{
+					"HealthyThreshold":	"5",
+					"Interval":	"10",
+					"Target":	"HTTP:80",
+					"Timeout":	"5",
+					"UnhealthyThreshold":"2"
+			},
+			"Instances": [
+				{
+					"Ref": "GHPrimary"
+				}
+			],
+			"SecurityGroups":	[
+				{
+					"Ref":	"ELBSecurityGroup"
+				}
+			],
+			"Listeners":	[
+				{
+					"InstancePort":	"80",
+					"LoadBalancerPort":	"80",
+					"Protocol":	"HTTP",
+					"InstanceProtocol":	"HTTP"
+				}
+			]
+		},
+		"DependsOn": "ELBSecurityGroup"
+	},
+
+    "GHInstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access and HTTP access on the inbound port",
+		"VpcId" : { "Ref" : "VPC" },
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 80,
+          "ToPort" : 80,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 443,
+          "ToPort" : 443,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 8443,
+          "ToPort" : 8443,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 25,
+          "ToPort" : 25,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 465,
+          "ToPort" : 465,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 587,
+          "ToPort" : 587,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 1194,
+          "ToPort" : 1194,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "udp",
+          "FromPort" : 1194,
+          "ToPort" : 1194,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 122,
+          "ToPort" : 122,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : 9418,
+          "ToPort" : 9418,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "udp",
+          "FromPort" : 123,
+          "ToPort" : 123,
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "udp",
+          "FromPort" : 161,
+          "ToPort" : 161,
+          "CidrIp" : "0.0.0.0/0"
+        } ]
+      }
+    },
+
+	"ELBSecurityGroup" : {
+		"Type":	"AWS::EC2::SecurityGroup",
+		"Properties": {
+			"GroupDescription": "ELB SG for Github Enterprise Primary node",
+			"VpcId":	{
+				"Ref":	"VPC"
+			},
+			"SecurityGroupIngress":	[
+				{
+					"IpProtocol":	"tcp",
+					"FromPort":	"80",
+					"ToPort":	"80",
+					"CidrIp":	"0.0.0.0/0"
+				}
+			]
+		}
+	}
+  },
+
+  "Outputs" : {
+    "PrimaryPrivateIP" : {
+      "Description" : "Private IP of the primary instance",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "GHPrimary", "PrivateIp" ]}]]}
+    },
+	"ReplicaPrivateIP" : {
+      "Description" : "Private IP of the replica instance",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "GHReplica", "PrivateIp" ]}]]}
+    },
+	"ELBDNSName": {
+		"Value": { "Fn::GetAtt": ["ELBasDNS", "DNSName"]},
+		"Description":  "The DNSName of ELB for Primary node"
+	}
+  }
+}
