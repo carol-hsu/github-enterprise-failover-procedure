@@ -21,6 +21,7 @@ os.system(SSHPrimary + " \"echo '"+ReplicaIP+" ip-" + "-".join(ReplicaIP.split("
 #import license, set configuration password, and apply setting
 os.system("cat "+LicenseFile+" | "+SSHPrimary+" -- ghe-import-license")
 os.system(SSHPrimary+" \"ghe-set-password\"")
+os.system(SSHPrimary+" \"ghe-ssl-certificate-setup -r")
 os.system(SSHPrimary+" \"ghe-config-apply\"")
 
 #----- RSA Keypair setting for Replica setup -----
@@ -38,27 +39,3 @@ os.system(SSHReplica+" \"ghe-repl-setup "+PrimaryIP+"\"")
 os.system(SSHReplica+" \"ghe-repl-start\"")
 #Check replica status
 os.system(SSHReplica+" \"ghe-repl-status\"")
-
-'''
-print (SetHostCommand)
-print (LicenseCommand)
-print (KeyCommand)
-print (CopyCommand)
-print (ImportCommand)
-print (SetupCommand)
-print (StartReplicaCommand)
-print (ReplicaStatusCommand)
-'''
-#os.system(KeyCommand)
-#os.system(CopyCommand)
-#os.system(ImportCommand)
-
-
-#KeyProcess = subprocess.Popen(KeyPairCommand,shell=True,
-#				 			  stdout=subprocess.PIPE, 
-#				 			  stderr=subprocess.PIPE )
-
-#out, error = KeyProcess.communicate()
-#errcode = KeyProcess.returncode
-#RSAKey = out.decode('utf8')[:-1]
-
