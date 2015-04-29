@@ -26,12 +26,9 @@ os.system(SSHPrimary+" \"ghe-ssl-certificate-setup -r\"")
 
 #os.system(SSHPrimary+" \"ghe-config-apply\"")
 ###Wait for screen click
-status = input("Clicked Save Setting? (y/Y)")
-if not (status == "y" or status == "Y" or status=="") : 
-	while True:
-		status = input("Clicked Save Setting? (y/Y)")
-		if status == "y" or status == "Y" or status=="" :
-			break
+status = "N"
+while not (status == "y" or status == "Y" or status==""):
+	status = input("Clicked Save Setting? (y/Y)")
 
 
 #----- RSA Keypair setting for Replica setup -----
