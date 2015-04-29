@@ -21,8 +21,18 @@ os.system(SSHPrimary + " \"echo '"+ReplicaIP+" ip-" + "-".join(ReplicaIP.split("
 #import license, set configuration password, and apply setting
 os.system("cat "+LicenseFile+" | "+SSHPrimary+" -- ghe-import-license")
 os.system(SSHPrimary+" \"ghe-set-password\"")
-os.system(SSHPrimary+" \"ghe-ssl-certificate-setup -r")
-os.system(SSHPrimary+" \"ghe-config-apply\"")
+os.system(SSHPrimary+" \"openssl x509 -fingerprint -in /etc/haproxy/ssl.crt -noout\"")
+os.system(SSHPrimary+" \"ghe-ssl-certificate-setup -r\"")
+
+#os.system(SSHPrimary+" \"ghe-config-apply\"")
+###Wait for screen click
+status = input("Clicked Save Setting? (y/Y)")
+if not (status == "y" or status == "Y" or status=="") : 
+	while True:
+		status = input("Clicked Save Setting? (y/Y)")
+		if status == "y" or status == "Y" or status=="" :
+			break
+
 
 #----- RSA Keypair setting for Replica setup -----
 #get RSA keypair and dump it in a file
@@ -35,7 +45,10 @@ os.system(SSHPrimary+" \"ghe-import-authorized-keys < replicaKey\"")
 #----- Replica node setup -----
 #initail
 os.system(SSHReplica+" \"ghe-repl-setup "+PrimaryIP+"\"")
+#Reset ssh keygen
+os.system("ssh-keygen -R "+ ReplicaIP +"; ssh-keygen -R \"["+ ReplicaIP +"]:122\"")
 #Start replica service
 os.system(SSHReplica+" \"ghe-repl-start\"")
 #Check replica status
 os.system(SSHReplica+" \"ghe-repl-status\"")
+
