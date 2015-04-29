@@ -171,7 +171,7 @@
 			"HealthCheck":	{
 					"HealthyThreshold":	"5",
 					"Interval":	"10",
-					"Target":	"HTTP:80/",
+					"Target":	"HTTPS:8443/",
 					"Timeout":	"5",
 					"UnhealthyThreshold":"2"
 			},
@@ -187,10 +187,10 @@
 			],
 			"Listeners":	[
 				{
-					"InstancePort":	"80",
-					"LoadBalancerPort":	"80",
-					"Protocol":	"HTTP",
-					"InstanceProtocol":	"HTTP"
+					"InstancePort":	"8443",
+					"LoadBalancerPort":	"8443",
+					"Protocol":	"TCP",
+					"InstanceProtocol":	"TCP"
 				}
 			]
 		},
@@ -295,6 +295,12 @@
 					"IpProtocol":	"tcp",
 					"FromPort":	"80",
 					"ToPort":	"80",
+					"CidrIp":	"0.0.0.0/0"
+				},
+				{
+					"IpProtocol":	"tcp",
+					"FromPort":	"8443",
+					"ToPort":	"8443",
 					"CidrIp":	"0.0.0.0/0"
 				}
 			]
