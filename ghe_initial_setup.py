@@ -40,11 +40,10 @@ status = "N"
 while not (status == "y" or status == "Y" or status==""):
 	status = input("Clicked Save Setting? (y/Y)")
 
-
-ReplaceHostname1 = " \"sudo sed -i '6c \    \\\"github_hostname\\\":\\\""+Hostname+"\\\",' /data/user/common/dna.json\""
-ReplaceHostname2 = " \"sudo sed -i '81c \      \\\"noreply_address\\\":\\\"norepy@"+Hostname+"\\\"' /data/user/common/dna.json\""
-os.system(SSHPrimary + ReplaceHostname1)
-os.system(SSHPrimary + ReplaceHostname2)
+#ReplaceHostname1 = " \"sudo sed -i '6c \    \\\"github_hostname\\\":\\\""+Hostname+"\\\",' /data/user/common/dna.json\""
+#ReplaceHostname2 = " \"sudo sed -i '81c \      \\\"noreply_address\\\":\\\"norepy@"+Hostname+"\\\"' /data/user/common/dna.json\""
+#os.system(SSHPrimary + ReplaceHostname1)
+#os.system(SSHPrimary + ReplaceHostname2)
 
 os.system("./ghe_replica_setup.py "+PrimaryIP+" "+ReplicaIP)
 

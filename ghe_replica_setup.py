@@ -10,6 +10,9 @@ SSHKeyFile = "/Users/carol/Carol_key_California.pem"
 SSHPrimary = "ssh -i "+SSHKeyFile+" -p 122 admin@"+PrimaryIP
 SSHReplica = "ssh -i "+SSHKeyFile+" -p 122 admin@"+ReplicaIP
 
+
+os.system(SSHReplica+" \"ghe-repl-teardown\"")
+
 #----- RSA Keypair setting for Replica setup -----
 #get RSA keypair and dump it in a file
 os.system(SSHReplica+" \"ghe-repl-setup "+PrimaryIP+" | grep 'ssh-rsa' \" > replicaKey")
