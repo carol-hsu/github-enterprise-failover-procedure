@@ -7,4 +7,4 @@ SSHKeyFile="/Users/carol/Carol_key_California.pem"
 
 
 #change replica node to be primary
-os.system("ssh -i " + SSHKeyFile + " -p 122 admin@" + ReplicaIP + " \"ghe-repl-promote\"")
+os.system("ssh -o \"StrictHostKeyChecking no\" -i " + SSHKeyFile + " -p 122 admin@" + ReplicaIP + " \"ghe-repl-promote\"")

@@ -53,7 +53,7 @@
       "eu-west-1" : { "AMI" : "" },
       "sa-east-1" : { "AMI" : "" },
       "us-east-1" : { "AMI" : "" },
-      "us-west-1" : { "AMI" : "ami-5d977819" },
+      "us-west-1" : { "AMI" : "ami-adf11ce9" },
       "us-west-2" : { "AMI" : "" }
     },
     "InstanceConfig" : {

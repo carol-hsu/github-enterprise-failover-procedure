@@ -38,6 +38,7 @@ startFailover = time.time()
 #replica node promoting
 os.system("./ghe_replica_to_primary.py "+ReplicaIP)
 
+print ("replica take place to primary   %s" % ( time.time() - startFailover ))
+
 #exchange the hostname
 os.system("sudo mv hosts /etc/hosts")
-print ("replica take place to primary   %s" % ( time.time() - startFailover ))
