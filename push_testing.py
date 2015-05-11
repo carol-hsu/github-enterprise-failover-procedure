@@ -9,9 +9,9 @@ recoveryTime =""
 
 
 startTime = time.time()
-dirNum = 10
+dirNum = 15
 
-while dirNum <= 14:
+while dirNum <= 19:
 	resAdd = os.system(changeDirectory+"git add Data/0"+str(dirNum)+"/*")
 	print ("========"+str(dirNum)+" ADD "+str(resAdd)+" ============")
 
